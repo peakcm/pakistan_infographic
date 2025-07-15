@@ -28,23 +28,23 @@ params <- list(
   seasonal_amp = 0.15, # seasonal amplitude
   peak_day = 180, # June 30
   init_pop = c(Punjab = 17000000, Sindh = 8000000, KPK = 3800000, KPK_Sub = 250000, Balochistan = 1400000, Balochistan_Sub = 400000), # Initial population for each province. Allocate the estimated 5% of pakistan pop into sub-pops proportionally into KPK and Balochistan
-  imm_start = c(Punjab = 0.9734, Sindh = 0.9612, KPK = 0.9544, KPK_Sub = 0.9, Balochistan = 0.9245, Balochistan_Sub = 0.9), # Immunization coverage at Jan 2026 per IDM Immunity Mapper. Set sub populations to have R=1 at start
+  imm_start = c(Punjab = 0.9734, Sindh = 0.9612, KPK = 0.9544, KPK_Sub = 0.9, Balochistan = 0.9245, Balochistan_Sub = 0.9), # Immunization coverage at Jan 2026 per IDM Immunity Mapper. Set sub populations to have R just above 1 at start
   afp_frac = 1/200
 )
 
 # Add daily number of births by each province. Also assumed to be the daily exit rate as populations age-out.
-national_daily_births <- 19176
+national_daily_births <- floor(7000000 / 365)
 params$daily_births <- c(params$init_pop / sum(params$init_pop) * national_daily_births)
 
 # Add a mixing matrix representing differential mixing within and between provinces
 params$mixing_matrix <- matrix(
   # Pun   Sin   KPK  KPK_Sub Bal   Bal_Sub
-  c(0.95, 0.01, 0.01, 0.01,  0.01, 0.01,   # Pun
-    0.01, 0.95, 0.01, 0.01,  0.01, 0.01,   # Sin
-    0.01, 0.01, 0.91, 0.05,  0.01, 0.01,   # KPK
-    0.01, 0.01, 0.05, 0.91,  0.01, 0.01,   # KPK_Sub
-    0.01, 0.01, 0.01, 0.01,  0.91, 0.05,   # Bal
-    0.01, 0.01, 0.01, 0.01,  0.05, 0.91),  # Bal_Sub
+  c(0.995, 0.001, 0.001, 0.001,  0.001, 0.001,   # Pun
+    0.001, 0.995, 0.001, 0.001,  0.001, 0.001,   # Sin
+    0.001, 0.001, 0.991, 0.005,  0.001, 0.001,   # KPK
+    0.001, 0.001, 0.005, 0.991,  0.001, 0.001,   # KPK_Sub
+    0.001, 0.001, 0.001, 0.001,  0.991, 0.005,   # Bal
+    0.001, 0.001, 0.001, 0.001,  0.005, 0.991),  # Bal_Sub
   nrow = 6, byrow = TRUE,
   dimnames = list(provinces, provinces)
 )
@@ -226,10 +226,10 @@ plot(seasonal_times, seasonal_betas, type = "l", col = "blue",
      main = "Seasonal Forcing of Beta in KPK")
 
 # Plot mixing matrix
-heatmap(params$mixing_matrix, Rowv = NA, Colv = NA, 
-        scale = "none", col = heat.colors(256), 
-        main = "Mixing Matrix for Provinces",
-        xlab = "Provinces", ylab = "Provinces")
+heatmap(log10(params$mixing_matrix), Rowv = NA, Colv = NA, 
+        scale = "none", col = rev(heat.colors(10)), 
+        main = "Mixing Matrix for Compartments",
+        xlab = "", ylab = "")
 
 #### Stochastic simulation ####
 # Convert SEIR model into stochastic simulation using Gillespie algorithm
@@ -410,3 +410,22 @@ mean(tail(median_trace_country,36)) * 12 # Monthly to annual
 # Proportion of simulations reaching die-out within a year
 mean(apply(simulation_matrix_I[365, , ], 2, function(x) all(x < 1)))
 
+#### Parking lot ####
+# Robustness of the ~1 year lag before outbreak for different Ro, different seasonality, starting immunity, vaccination
+
+# Robustness of the peak and annual burden to things other than Ro and RI coverage
+  # Heat map with Ro and RI coverage?
+
+# Robustness of the annual outbreak frequency to Ro and RI coverage
+
+# What role should IPV play?
+
+# How soon might we get the first outbreak? Maybe consider maternal antibodies, lower contact
+
+# Polio case rates prior to vaccination?
+
+# Add a compartment for newborns?
+
+# Caution around time to first outbreak? Lower contact rates
+
+# Test heterogeneity in R by geography
